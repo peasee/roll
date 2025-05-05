@@ -1,4 +1,4 @@
-use std::future::Future;
+use std::{future::Future, sync::Arc};
 
 use crate::models::{APIError, AppConfiguration, NewPollBody, PollVoteBody};
 use axum::response::Result;
@@ -13,7 +13,7 @@ struct RecaptchaResponse {
 }
 
 async fn verify_recaptcha(
-    config: &AppConfiguration,
+    config: &Arc<AppConfiguration>,
     recaptcha_token: &str,
     originating_route: &str,
 ) -> anyhow::Result<bool> {
@@ -32,7 +32,10 @@ async fn verify_recaptcha(
 }
 
 pub trait Recaptcha {
-    fn validate(&self, config: &AppConfiguration) -> Result<(), APIError> {
+    /// # Errors
+    ///
+    /// - missing recaptcha secret or site key from configuration
+    fn validate(&self, config: &Arc<AppConfiguration>) -> Result<(), APIError> {
         if config.recaptcha_secret_key.is_none() || config.recaptcha_site_key.is_none() {
             return Err(APIError::ConfigurationError);
         }
@@ -42,56 +45,48 @@ pub trait Recaptcha {
 
     fn verify(
         &self,
-        config: &AppConfiguration,
+        config: Arc<AppConfiguration>,
     ) -> impl Future<Output = Result<(), APIError>> + Send;
 }
 
 impl Recaptcha for PollVoteBody {
-    async fn verify(&self, config: &AppConfiguration) -> Result<(), APIError> {
+    async fn verify(&self, config: Arc<AppConfiguration>) -> Result<(), APIError> {
         // verify the recaptcha token
         // this is a stub implementation
-        self.validate(config)?;
+        self.validate(&config)?;
 
         let recaptcha_response = verify_recaptcha(
-            config,
+            &config,
             self.recaptcha_token.as_ref().unwrap_or(&String::new()),
             "vote",
         )
         .await;
 
-        if recaptcha_response.is_err() {
-            return Err(APIError::ConfigurationError);
+        match recaptcha_response {
+            Ok(true) => Ok(()),
+            Ok(false) => Err(APIError::InvalidToken),
+            Err(_) => Err(APIError::ConfigurationError),
         }
-
-        if !recaptcha_response.unwrap() {
-            return Err(APIError::InvalidToken);
-        }
-
-        Ok(())
     }
 }
 
 impl Recaptcha for NewPollBody {
-    async fn verify(&self, config: &AppConfiguration) -> Result<(), APIError> {
+    async fn verify(&self, config: Arc<AppConfiguration>) -> Result<(), APIError> {
         // verify the recaptcha token
         // this is a stub implementation
-        self.validate(config)?;
+        self.validate(&config)?;
 
         let recaptcha_response = verify_recaptcha(
-            config,
+            &config,
             self.recaptcha_token.as_ref().unwrap_or(&String::new()),
             "create",
         )
         .await;
 
-        if recaptcha_response.is_err() {
-            return Err(APIError::ConfigurationError);
+        match recaptcha_response {
+            Ok(true) => Ok(()),
+            Ok(false) => Err(APIError::InvalidToken),
+            Err(_) => Err(APIError::ConfigurationError),
         }
-
-        if !recaptcha_response.unwrap() {
-            return Err(APIError::InvalidToken);
-        }
-
-        Ok(())
     }
 }
