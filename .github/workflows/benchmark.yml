@@ -51,7 +51,9 @@ jobs:
     - name: Make binary executable
       run: chmod +x ./roll
     - name: Start server
-      run: ./roll & SERVER_PID=$! && echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+      run: |
+        ./roll > server.logs & SERVER_PID=$! \
+        && echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
     - name: Wait for server startup
       run: sleep 5 # Give the server time to start
     - name: Create poll
@@ -80,3 +82,8 @@ jobs:
         echo "Stopping server with PID $SERVER_PID"
         kill $SERVER_PID
         wait $SERVER_PID || true # Wait for the process to exit, ignore error if already stopped
+    - name: Display logs
+      if: always()
+      run: |
+        echo "Server logs:"
+        cat server.logs
