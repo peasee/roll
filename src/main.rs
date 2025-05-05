@@ -1,17 +1,17 @@
 use anyhow::Result;
-use axum::routing::post;
 use axum::Extension;
+use axum::routing::post;
 use clap::Parser;
 use tokio::sync::RwLock;
 
 use std::sync::Arc;
 use std::{collections::BTreeMap, net::SocketAddr};
-use tracing::{info, Level};
+use tracing::{Level, info};
 use tracing_subscriber::FmtSubscriber;
 
-use axum::{routing::get, Router};
+use axum::{Router, routing::get};
 
-use poll::models::AppState;
+use roll::models::AppState;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
 
     info!("Poll API starting up...");
 
-    let config = poll::models::AppConfiguration::parse();
+    let config = roll::models::AppConfiguration::parse();
 
     let bind_string = format!("0.0.0.0:{}", config.port);
 
@@ -38,18 +38,18 @@ async fn main() -> Result<()> {
 
     // build our application with routes
     let app = Router::new()
-        .route("/", get(poll::routes::static_routes::get_index))
-        .route("/index.html", get(poll::routes::static_routes::get_index))
-        .route("/poll", get(poll::routes::static_routes::get_index))
-        .route("/poll/:id", get(poll::routes::static_routes::get_index))
-        .route("/bundle.js", get(poll::routes::static_routes::get_bundle))
-        .route("/api/poll/:id", get(poll::routes::polls::get_poll))
+        .route("/", get(roll::routes::static_routes::get_index))
+        .route("/index.html", get(roll::routes::static_routes::get_index))
+        .route("/poll", get(roll::routes::static_routes::get_index))
+        .route("/poll/:id", get(roll::routes::static_routes::get_index))
+        .route("/bundle.js", get(roll::routes::static_routes::get_bundle))
+        .route("/api/poll/:id", get(roll::routes::polls::get_poll))
         .route(
             "/api/poll/:id/options",
-            get(poll::routes::polls::get_poll_options),
+            get(roll::routes::polls::get_poll_options),
         )
-        .route("/api/poll", post(poll::routes::polls::create_poll))
-        .route("/api/poll/:id/vote", post(poll::routes::polls::vote_poll))
+        .route("/api/poll", post(roll::routes::polls::create_poll))
+        .route("/api/poll/:id/vote", post(roll::routes::polls::vote_poll))
         .with_state(app_state)
         .layer(Extension(config));
 

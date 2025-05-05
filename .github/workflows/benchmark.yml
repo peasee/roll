@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build
+    - name: Build
+      run: cargo build --release
+    - name: Stage binary
+      run: cp target/release/roll ./roll && chmod +x ./roll
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: roll-binary
+        path: ./roll
+
+  benchmark:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - name: Install oha
+      run: cargo install oha
+    - name: Install jq
+      run: sudo apt-get update && sudo apt-get install -y jq
+    - name: Download binary artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: roll-binary
+    - name: Make binary executable
+      run: chmod +x ./roll
+    - name: Start server
+      run: ./roll & SERVER_PID=$! && echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+    - name: Wait for server startup
+      run: sleep 5 # Give the server time to start
+    - name: Create poll
+      id: create_poll
+      run: |
+        POLL_RESPONSE=$(curl -s -X POST http://127.0.0.1:3000/poll \
+          -H "Content-Type: application/json" \
+          -d '{"title": "Benchmark Poll", "options": ["Option A", "Option B", "Option C"]}')
+        echo "Poll creation response: $POLL_RESPONSE"
+        POLL_ID=$(echo $POLL_RESPONSE | jq -r .id)
+        if [ "$POLL_ID" == "null" ] || [ -z "$POLL_ID" ]; then
+          echo "::error::Failed to create poll or extract ID from response: $POLL_RESPONSE"
+          exit 1
+        fi
+        echo "poll_id=$POLL_ID" >> $GITHUB_OUTPUT
+    - name: Benchmark GET /poll/:id
+      run: |
+        echo "Benchmarking GET /poll/${{ steps.create_poll.outputs.poll_id }}"
+        oha -n 1000 -c 50 "http://127.0.0.1:3000/poll/${{ steps.create_poll.outputs.poll_id }}"
+    - name: Benchmark GET /poll/:id/options
+      run: |
+        echo "Benchmarking GET /poll/${{ steps.create_poll.outputs.poll_id }}/options"
+        oha -n 1000 -c 50 "http://127.0.0.1:3000/poll/${{ steps.create_poll.outputs.poll_id }}/options"
+    - name: Stop server
+      run: |
+        echo "Stopping server with PID $SERVER_PID"
+        kill $SERVER_PID
+        wait $SERVER_PID || true # Wait for the process to exit, ignore error if already stopped
