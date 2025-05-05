@@ -1,5 +1,7 @@
 # roll
 
+![GitHub License](https://img.shields.io/github/license/peasee/roll) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/peasee/roll/ci.yml)
+
 An open source, high performance, polling platform - built in Rust.
 
 Project name suggested by [@farooqkz](https://github.com/farooqkz) - "Rust + Poll" :heart:
