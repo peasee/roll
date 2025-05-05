@@ -17,6 +17,7 @@ impl From<&Poll> for PollView {
     fn from(poll: &Poll) -> Self {
         let mut view = PollView {
             title: poll.title.clone(),
+            #[allow(clippy::cast_possible_truncation)]
             option_count: poll.options.len() as u32,
             options: HashMap::new(),
         };

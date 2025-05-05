@@ -1,7 +1,8 @@
 use anyhow::Result;
 use axum::routing::post;
+use axum::Extension;
 use clap::Parser;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use std::sync::Arc;
 use std::{collections::BTreeMap, net::SocketAddr};
@@ -29,10 +30,11 @@ async fn main() -> Result<()> {
 
     let bind_string = format!("0.0.0.0:{}", config.port);
 
-    let shared_state = Arc::new(Mutex::new(AppState {
+    let app_state = Arc::new(RwLock::new(AppState {
         polls: BTreeMap::new(),
-        config,
     }));
+
+    let config = Arc::new(config);
 
     // build our application with routes
     let app = Router::new()
@@ -48,7 +50,8 @@ async fn main() -> Result<()> {
         )
         .route("/api/poll", post(poll::routes::polls::create_poll))
         .route("/api/poll/:id/vote", post(poll::routes::polls::vote_poll))
-        .with_state(shared_state);
+        .with_state(app_state)
+        .layer(Extension(config));
 
     // run our app with hyper, listening globally on port 3000
 

@@ -50,7 +50,7 @@ impl Poll {
         self.options.push(option);
     }
 
-    pub fn remove_option(&mut self, option: PollOption) {
+    pub fn remove_option(&mut self, option: &PollOption) {
         self.options.retain(|o| o.id != option.id);
     }
 }

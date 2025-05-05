@@ -4,6 +4,11 @@ use axum::http::StatusCode;
 
 /// GET /index.html
 /// Returns a poll with the given id
+///
+/// # Errors
+///
+/// - never. result for axum
+#[allow(clippy::unused_async)]
 pub async fn get_index() -> Result<(StatusCode, Html<String>)> {
     Ok((
         StatusCode::OK,
@@ -13,6 +18,11 @@ pub async fn get_index() -> Result<(StatusCode, Html<String>)> {
 
 /// GET /bundle.js
 /// Returns a poll with the given id
+///
+/// # Errors
+///
+/// - never. result for axum
+#[allow(clippy::unused_async)]
 pub async fn get_bundle() -> Result<(StatusCode, Html<String>)> {
     Ok((
         StatusCode::OK,

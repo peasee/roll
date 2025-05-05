@@ -8,6 +8,7 @@ pub struct Voter {
 }
 
 impl Voter {
+    #[must_use]
     pub fn new(ip: String, poll_id: String, option_id: u64) -> Self {
         Voter {
             ip,
