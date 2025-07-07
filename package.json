@@ -19,9 +19,9 @@
   },
   "homepage": "https://github.com/peasee/poll#readme",
   "devDependencies": {
-    "@babel/core": "^7.27.7",
-    "@babel/plugin-transform-runtime": "^7.27.4",
-    "@babel/preset-env": "^7.27.2",
+    "@babel/core": "^7.28.0",
+    "@babel/plugin-transform-runtime": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@babel/runtime": "^7.27.6",
     "axios": "^1.10.0",
@@ -40,6 +40,6 @@
     "terser-webpack-plugin": "^5.3.14",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2",
-    "dotenv": "^17.0.0"
+    "dotenv": "^17.0.1"
   }
 }
